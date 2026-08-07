@@ -160,13 +160,81 @@
             <!-- ========================================== -->
             <!-- 模块 2：学生名单 -->
             <!-- ========================================== -->
-            <div id="students" class="tab-content">
-                <h2>学生名单管理</h2>
-                
-                <!-- 👇【在此处添加“学生名单”的具体内容代码】 👇 -->
-                <p>你可以在这里放之前的表格代码。</p >
-                <!-- 👆【内容添加结束】 👆 -->
-            </div>
+            <script>
+    // 1. 这里存放你的学生数据
+    const studentData = [
+        { sno: "202485013001", name: "邹新玥", gender: "女", cls: "网安24-1" },
+        { sno: "202485013002", name: "魏雪莹", gender: "女", cls: "网安24-1" },
+        { sno: "202485013003", name: "邹蕊羽", gender: "女", cls: "网安24-1" },
+        { sno: "202485013004", name: "胡帆", gender: "女", cls: "网安24-1" },
+        { sno: "202485013005", name: "慕妍冰", gender: "女", cls: "网安24-1" },
+        { sno: "202485013006", name: "乔庆曦", gender: "女", cls: "网安24-1" },
+        { sno: "202485013007", name: "王欣蕊", gender: "女", cls: "网安24-1" },
+        { sno: "202485013008", name: "邵琪", gender: "女", cls: "网安24-1" },
+        { sno: "202485013009", name: "徐嘉启", gender: "女", cls: "网安24-1" },
+        { sno: "202485013010", name: "刘雨杰", gender: "女", cls: "网安24-1" },
+        { sno: "202485013011", name: "马晓晗", gender: "女", cls: "网安24-1" },
+        { sno: "202485013012", name: "孙雅洁", gender: "女", cls: "网安24-1" },
+        { sno: "202485013013", name: "闫嘉欣", gender: "男", cls: "网安24-1" },
+        { sno: "202485013014", name: "谈广宅", gender: "男", cls: "网安24-1" },
+        { sno: "202485013015", name: "申千逸", gender: "男", cls: "网安24-1" },
+        { sno: "202485013016", name: "张延昭", gender: "男", cls: "网安24-1" },
+        { sno: "202485013017", name: "朱安森", gender: "男", cls: "网安24-1" },
+        { sno: "202485013018", name: "胡海涛", gender: "男", cls: "网安24-1" },
+        { sno: "202485013019", name: "王钰鸿", gender: "男", cls: "网安24-1" },
+        { sno: "202485013020", name: "魏传埕", gender: "男", cls: "网安24-1" },
+        { sno: "202485013021", name: "刘子铭", gender: "男", cls: "网安24-1" },
+        { sno: "202485013022", name: "于东平", gender: "男", cls: "网安24-1" },
+        { sno: "202485013023", name: "张坤鹏", gender: "男", cls: "网安24-1" },
+        { sno: "202485013024", name: "戴云鹏", gender: "男", cls: "网安24-1" },
+        { sno: "202485013025", name: "王浩宇", gender: "男", cls: "网安24-1" },
+        { sno: "202485013026", name: "徐伊凡", gender: "男", cls: "网安24-1" },
+        { sno: "202485013027", name: "赵汉松", gender: "男", cls: "网安24-1" },
+        { sno: "202485013028", name: "于欣弘", gender: "男", cls: "网安24-1" },
+        { sno: "202485013029", name: "马椿程", gender: "男", cls: "网安24-1" },
+        { sno: "202485013030", name: "徐加濠", gender: "男", cls: "网安24-1" },
+        { sno: "202485013031", name: "刘成铭", gender: "男", cls: "网安24-1" },
+        { sno: "202485013032", name: "王昊冉", gender: "男", cls: "网安24-1" },
+        { sno: "202485013033", name: "张子豪", gender: "男", cls: "网安24-1" },
+        { sno: "202485013034", name: "史卜硕", gender: "男", cls: "网安24-1" },
+        { sno: "202485013035", name: "荆信祺", gender: "男", cls: "网安24-1" },
+        { sno: "202485013036", name: "袁佳乐", gender: "男", cls: "网安24-1" },
+        { sno: "202485013037", name: "肖佳城", gender: "男", cls: "网安24-1" },
+        { sno: "202485013038", name: "郭志翔", gender: "男", cls: "网安24-1" },
+        { sno: "202485013039", name: "杨龙", gender: "男", cls: "网安24-1" },
+        { sno: "202485013040", name: "王中鸣", gender: "男", cls: "网安24-1" }
+    ];
+
+    // 2. 渲染表格的函数
+    function renderTable(data) {
+        const tbody = document.getElementById("studentTableBody");
+        tbody.innerHTML = ""; // 清空现有内容
+
+        data.forEach(student => {
+            const row = `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td>${student.sno}</td>
+                    <td style="font-weight: bold; color: #007bff;">${student.name}</td>
+                    <td>${student.gender}</td>
+                    <td>${student.cls}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // 3. 搜索功能的函数
+    function filterTable() {
+        const input = document.getElementById("searchInput").value.toLowerCase();
+        const filteredData = studentData.filter(student => 
+            student.name.includes(input) || student.sno.includes(input)
+        );
+        renderTable(filteredData);
+    }
+
+    // 页面加载时立即显示所有学生
+    renderTable(studentData);
+</script>
 
             <!-- ========================================== -->
             <!-- 模块 3：成绩管理 -->
