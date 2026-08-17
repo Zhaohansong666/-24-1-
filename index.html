@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小宇基地</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Microsoft YaHei', sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
+
+/* ========== COVER SCREEN ========== */
+#cover-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, #1a0a0a 0%, #2d1f1f 30%, #0d0d0d 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 1000; transition: opacity 0.8s;
+}
+#cover-screen::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" x="20" font-size="30" opacity="0.03">🧟</text><text y="80" x="60" font-size="20" opacity="0.03">🧟‍♂️</text><text y="30" x="70" font-size="25" opacity="0.03">💀</text></svg>');
+  background-size: 200px; animation: bgMove 20s linear infinite;
+}
+@keyframes bgMove { from { background-position: 0 0; } to { background-position: 200px 200px; } }
+
+.zombie-particles { position: absolute; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
+.particle { position: absolute; font-size: 20px; opacity: 0.15; animation: float 8s infinite; }
+@keyframes float { 0%,100% { transform: translateY(100vh) rotate(0deg); opacity: 0; } 50% { opacity: 0.2; } 100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; } }
+
+.cover-title {
+  font-size: 4rem; font-weight: 900; color: #ff4444;
+  text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, 0 0 80px #cc0000;
+  letter-spacing: 8px; z-index: 10; animation: titlePulse 2s ease-in-out infinite;
+  margin-bottom: 10px;
+}
+@keyframes titlePulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+
+.cover-subtitle { color: #888; font-size: 1rem; z-index: 10; margin-bottom: 40px; letter-spacing: 4px; }
+
+.enter-btn {
+  padding: 18px 60px; font-size: 1.3rem; background: linear-gradient(135deg, #8b0000, #ff4444);
+  color: white; border: 2px solid #ff6666; border-radius: 50px; cursor: pointer;
+  z-index: 10; transition: all 0.3s; letter-spacing: 3px; font-weight: bold;
+  box-shadow: 0 0 30px rgba(255,0,0,0.3);
+}
+.enter-btn:hover { transform: scale(1.1); box-shadow: 0 0 50px rgba(255,0,0,0.6); }
+
+.points-entry-btn {
+  margin-top: 30px; padding: 10px 30px; font-size: 0.9rem;
+  background: transparent; color: #666; border: 1px solid #444;
+  border-radius: 25px; cursor: pointer; z-index: 10; transition: all 0.3s;
+}
+.points-entry-btn:hover { color: #aaa; border-color: #888; }
+
+/* ========== PASSWORD MODAL ========== */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center;
+  z-index: 2000;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+  background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 40px;
+  border-radius: 20px; border: 1px solid #333; text-align: center; min-width: 350px;
+}
+.modal-box h3 { color: #fff; margin-bottom: 20px; font-size: 1.3rem; }
+.modal-box input {
+  width: 100%; padding: 12px 20px; font-size: 1.1rem; background: #0d1117;
+  border: 1px solid #444; border-radius: 10px; color: #fff; text-align: center;
+  letter-spacing: 5px; margin-bottom: 15px;
+}
+.modal-box input:focus { outline: none; border-color: #ff4444; }
+.modal-btns { display: flex; gap: 10px; justify-content: center; }
+.modal-btns button {
+  padding: 10px 30px; border-radius: 10px; border: none; cursor: pointer;
+  font-size: 1rem; transition: all 0.3s;
+}
+.btn-confirm { background: #ff4444; color: white; }
+.btn-cancel { background: #333; color: #ccc; }
+
+/* ========== MAIN SCREEN ========== */
+#main-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 50%, #0d1117 100%);
+  display: none; flex-direction: column;
+}
+#main-screen.active { display: flex; }
+
+.top-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 15px 25px; background: rgba(0,0,0,0.5); border-bottom: 1px solid #333;
+}
+.top-bar .points-display {
+  color: #ffd700; font-size: 1.2rem; font-weight: bold;
+  display: flex; align-items: center; gap: 8px;
+}
+.top-bar .back-btn {
+  padding: 8px 20px; background: #333; color: #ccc; border: 1px solid #555;
+  border-radius: 20px; cursor: pointer; transition: all 0.3s;
+}
+.top-bar .back-btn:hover { background: #555; }
+
+.rv-container {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.rv-carousel {
+  display: flex; transition: transform 0.5s ease; height: 100%; align-items: center;
+}
+.rv-item {
+  min-width: 100%; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 20px;
+}
+.rv-visual {
+  width: 320px; height: 200px; border-radius: 20px; display: flex;
+  align-items: center; justify-content: center; font-size: 5rem;
+  cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden;
+}
+.rv-visual:hover { transform: scale(1.05); }
+.rv-visual.locked { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; }
+.rv-visual.locked::after {
+  content: '🔒'; position: absolute; font-size: 3rem;
+}
+.rv-name { color: #fff; font-size: 1.5rem; margin-top: 20px; font-weight: bold; }
+.rv-desc { color: #888; font-size: 0.9rem; margin-top: 8px; }
+.rv-unlock-info { color: #ffd700; font-size: 0.9rem; margin-top: 10px; }
+
+.carousel-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 50px; height: 50px; background: rgba(255,255,255,0.1);
+  border: 1px solid #555; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; color: #fff;
+  font-size: 1.5rem; cursor: pointer; z-index: 10; transition: all 0.3s;
+}
+.carousel-arrow:hover { background: rgba(255,255,255,0.2); }
+.carousel-arrow.left { left: 20px; }
+.carousel-arrow.right { right: 20px; }
+
+.rv-dots { display: flex; gap: 8px; margin-top: 20px; }
+.rv-dot { width: 10px; height: 10px; border-radius: 50%; background: #444; transition: all 0.3s; }
+.rv-dot.active { background: #ff4444; transform: scale(1.3); }
+
+/* ========== RV INTERIOR ========== */
+#rv-interior {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, #1a1a2e 0%, #2d2d44 50%, #1a1a2e 100%);
+  display: none; flex-direction: column;
+}
+#rv-interior.active { display: flex; }
+
+.interior-header {
+  padding: 20px; text-align: center; border-bottom: 1px solid #333;
+  background: rgba(0,0,0,0.3);
+}
+.interior-header h2 { color: #fff; font-size: 1.5rem; }
+.interior-header p { color: #888; font-size: 0.85rem; margin-top: 5px; }
+
+.interior-content {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  gap: 40px; padding: 40px; flex-wrap: wrap;
+}
+.function-card {
+  width: 200px; height: 220px; border-radius: 20px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.3s; border: 2px solid transparent;
+}
+.function-card:hover { transform: translateY(-10px); }
+.function-card .card-icon { font-size: 4rem; margin-bottom: 15px; }
+.function-card .card-title { color: #fff; font-size: 1.2rem; font-weight: bold; }
+.function-card .card-desc { color: #aaa; font-size: 0.8rem; margin-top: 8px; }
+
+.pet-card { background: linear-gradient(135deg, #2d1b69, #11998e); }
+.pet-card:hover { border-color: #11998e; box-shadow: 0 10px 40px rgba(17,153,142,0.3); }
+.shop-card { background: linear-gradient(135deg, #8b0000, #ff6b35); }
+.shop-card:hover { border-color: #ff6b35; box-shadow: 0 10px 40px rgba(255,107,53,0.3); }
+
+/* ========== PET SYSTEM ========== */
+#pet-system {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, #0d2137 0%, #1a3a5c 50%, #0d2137 100%);
+  display: none; flex-direction: column; z-index: 500;
+}
+#pet-system.active { display: flex; }
+
+.pet-area {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 20px;
+}
+.pet-display {
+  width: 200px; height: 200px; background: radial-gradient(circle, rgba(17,153,142,0.2), transparent);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 6rem; animation: petBounce 2s ease-in-out infinite; position: relative;
+}
+@keyframes petBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+.pet-name { color: #fff; font-size: 1.5rem; margin-top: 20px; font-weight: bold; }
+.pet-status { display: flex; gap: 20px; margin-top: 15px; }
+.pet-stat {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+}
+.pet-stat label { color: #aaa; font-size: 0.8rem; }
+.pet-stat .stat-bar {
+  width: 80px; height: 8px; background: #333; border-radius: 4px; overflow: hidden;
+}
+.pet-stat .stat-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.hunger-fill { background: linear-gradient(90deg, #ff6b35, #ffd700); }
+.happy-fill { background: linear-gradient(90deg, #ff69b4, #ff1493); }
+.health-fill { background: linear-gradient(90deg, #00ff88, #00cc66); }
+
+.pet-actions { display: flex; gap: 15px; margin-top: 30px; flex-wrap: wrap; justify-content: center; }
+.pet-action-btn {
+  padding: 12px 25px; border-radius: 15px; border: none; cursor: pointer;
+  font-size: 0.9rem; transition: all 0.3s; color: white; font-weight: bold;
+}
+.pet-action-btn:hover { transform: scale(1.1); }
+.btn-feed { background: linear-gradient(135deg, #ff6b35, #ff4444); }
+.btn-play { background: linear-gradient(135deg, #11998e, #38ef7d); }
+.btn-heal { background: linear-gradient(135deg, #667eea, #764ba2); }
+.btn-pet-select { background: linear-gradient(135deg, #f093fb, #f5576c); }
+
+.pet-message {
+  margin-top: 20px; padding: 15px 30px; background: rgba(255,255,255,0.05);
+  border-radius: 15px; color: #ddd; font-size: 0.9rem; min-height: 50px;
+  display: flex; align-items: center; border: 1px solid #333;
+}
+
+.no-pet-msg { color: #888; font-size: 1.1rem; text-align: center; }
+
+/* ========== SHOP (AIRDROP) ========== */
+#shop-system {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%);
+  display: none; flex-direction: column; z-index: 500;
+}
+#shop-system.active { display: flex; }
+
+.shop-tabs {
+  display: flex; justify-content: center; gap: 10px; padding: 15px;
+  border-bottom: 1px solid #333;
+}
+.shop-tab {
+  padding: 10px 25px; border-radius: 20px; border: 1px solid #555;
+  background: transparent; color: #ccc; cursor: pointer; transition: all 0.3s;
+}
+.shop-tab.active { background: #ff4444; border-color: #ff4444; color: white; }
+
+.shop-grid {
+  flex: 1; overflow-y: auto; padding: 20px; display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px; align-content: start;
+}
+.shop-item {
+  background: rgba(255,255,255,0.05); border: 1px solid #333;
+  border-radius: 15px; padding: 20px 15px; text-align: center;
+  cursor: pointer; transition: all 0.3s;
+}
+.shop-item:hover { border-color: #ff6b35; transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(255,107,53,0.2); }
+.shop-item .item-icon { font-size: 3rem; margin-bottom: 10px; }
+.shop-item .item-name { color: #fff; font-size: 0.9rem; margin-bottom: 5px; }
+.shop-item .item-price { color: #ffd700; font-size: 0.85rem; font-weight: bold; }
+.shop-item.cant-afford { opacity: 0.4; }
+
+/* ========== ADMIN PANEL ========== */
+#admin-panel {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+  display: none; flex-direction: column; z-index: 1500;
+}
+#admin-panel.active { display: flex; }
+
+.admin-header {
+  padding: 20px; text-align: center; border-bottom: 1px solid #333;
+  background: rgba(139,0,0,0.2);
+}
+.admin-header h2 { color: #ff4444; }
+
+.admin-content { flex: 1; overflow-y: auto; padding: 20px; }
+.admin-section { margin-bottom: 30px; }
+.admin-section h3 { color: #fff; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #333; }
+
+.admin-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 15px; background: rgba(255,255,255,0.03); border-radius: 10px;
+  margin-bottom: 8px;
+}
+.admin-row label { color: #ccc; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; }
+.admin-row label span { font-size: 1.5rem; }
+.admin-row input {
+  width: 80px; padding: 8px; background: #1a1a1a; border: 1px solid #444;
+  border-radius: 8px; color: #ffd700; text-align: center; font-size: 1rem;
+}
+.admin-row input:focus { outline: none; border-color: #ff4444; }
+
+.add-points-section {
+  display: flex; align-items: center; gap: 15px; padding: 20px;
+  background: rgba(255,215,0,0.05); border: 1px solid #333; border-radius: 15px;
+  margin-bottom: 20px;
+}
+.add-points-section input {
+  flex: 1; padding: 12px 20px; background: #0d0d0d; border: 1px solid #444;
+  border-radius: 10px; color: #ffd700; font-size: 1.2rem; text-align: center;
+}
+.add-points-section input:focus { outline: none; border-color: #ffd700; }
+.add-points-btn {
+  padding: 12px 30px; background: linear-gradient(135deg, #ffd700, #ff8c00);
+  border: none; border-radius: 10px; color: #000; font-weight: bold;
+  font-size: 1rem; cursor: pointer; transition: all 0.3s;
+}
+.add-points-btn:hover { transform: scale(1.05); }
+
+.current-points-display {
+  text-align: center; padding: 20px; margin-bottom: 20px;
+  background: rgba(255,215,0,0.05); border-radius: 15px;
+}
+.current-points-display .label { color: #888; font-size: 0.9rem; }
+.current-points-display .value { color: #ffd700; font-size: 2.5rem; font-weight: bold; }
+
+/* ========== PET SELECTION MODAL ========== */
+.pet-select-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px; padding: 20px; max-height: 60vh; overflow-y: auto;
+}
+.pet-select-item {
+  background: rgba(255,255,255,0.05); border: 1px solid #333;
+  border-radius: 15px; padding: 15px; text-align: center;
+  cursor: pointer; transition: all 0.3s;
+}
+.pet-select-item:hover { border-color: #11998e; transform: scale(1.05); }
+.pet-select-item .pet-sel-icon { font-size: 2.5rem; margin-bottom: 8px; }
+.pet-select-item .pet-sel-name { color: #fff; font-size: 0.85rem; }
+.pet-select-item.owned { border-color: #11998e; background: rgba(17,153,142,0.1); }
+
+/* ========== TOAST ========== */
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  padding: 15px 30px; background: rgba(0,0,0,0.9); color: #fff;
+  border-radius: 10px; z-index: 9999; animation: toastIn 0.3s ease;
+  border: 1px solid #444; font-size: 0.95rem;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 600px) {
+  .cover-title { font-size: 2.5rem; }
+  .rv-visual { width: 250px; height: 160px; font-size: 4rem; }
+  .interior-content { gap: 20px; padding: 20px; }
+  .function-card { width: 160px; height: 180px; }
+  .shop-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+}
+
+/* RV Themes */
+.rv-basic { background: linear-gradient(135deg, #4a6741, #2d4a2d); border: 2px solid #5a8a50; }
+.rv-armored { background: linear-gradient(135deg, #4a4a4a, #2d2d2d); border: 2px solid #777; }
+.rv-luxury { background: linear-gradient(135deg, #4a2d6b, #2d1b4e); border: 2px solid #8855cc; }
+.rv-tech { background: linear-gradient(135deg, #1a3a5c, #0d2137); border: 2px solid #4488cc; }
+.rv-fortress { background: linear-gradient(135deg, #5c1a1a, #3d0d0d); border: 2px solid #cc4444; }
+
+.rv-interior-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.05; pointer-events: none; }
+
+/* Unlock button */
+.unlock-btn {
+  margin-top: 15px; padding: 10px 30px; background: linear-gradient(135deg, #ffd700, #ff8c00);
+  border: none; border-radius: 25px; color: #000; font-weight: bold;
+  cursor: pointer; transition: all 0.3s; font-size: 0.9rem;
+}
+.unlock-btn:hover { transform: scale(1.1); }
+
+/* Feeding animation */
+.feed-anim {
+  position: absolute; font-size: 2rem; animation: feedFloat 1s ease forwards;
+}
+@keyframes feedFloat {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-80px) scale(0.5); }
+}
+
+.heart-anim {
+  position: absolute; font-size: 1.5rem; animation: heartFloat 1.5s ease forwards;
+}
+@keyframes heartFloat {
+  0% { opacity: 1; transform: translateY(0) scale(0.5); }
+  50% { transform: translateY(-40px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-80px) scale(0.8); }
+}
+</style>
+</head>
+<body>
+
+<!-- ========== COVER SCREEN ========== -->
+<div id="cover-screen">
+  <div class="zombie-particles" id="particles"></div>
+  <div class="cover-title">小宇基地</div>
+  <div class="cover-subtitle">☣ 丧尸末日 · 生存基地 ☣</div>
+  <button class="enter-btn" onclick="enterSystem()">⚡ 进入基地 ⚡</button>
+  <button class="points-entry-btn" onclick="showPasswordModal()">🔐 积分结算</button>
+</div>
+
+<!-- ========== PASSWORD MODAL ========== -->
+<div class="modal-overlay" id="password-modal">
+  <div class="modal-box">
+    <h3>🔐 请输入管理密码</h3>
+    <input type="password" id="admin-password" placeholder="••••••" maxlength="10">
+    <div class="modal-btns">
+      <button class="btn-confirm" onclick="verifyPassword()">确认</button>
+      <button class="btn-cancel" onclick="closePasswordModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MAIN SCREEN ========== -->
+<div id="main-screen">
+  <div class="top-bar">
+    <button class="back-btn" onclick="exitToCover()">← 返回封面</button>
+    <div class="points-display">
+      <span>💰</span>
+      <span id="main-points">0</span>
+      <span>积分</span>
+    </div>
+  </div>
+  <div class="rv-container">
+    <div class="carousel-arrow left" onclick="prevRV()">‹</div>
+    <div class="rv-carousel" id="rv-carousel"></div>
+    <div class="carousel-arrow right" onclick="nextRV()">›</div>
+  </div>
+  <div class="rv-dots" id="rv-dots"></div>
+</div>
+
+<!-- ========== RV INTERIOR ========== -->
+<div id="rv-interior">
+  <div class="top-bar">
+    <button class="back-btn" onclick="exitRV()">← 返回车库</button>
+    <div class="points-display">
+      <span>💰</span>
+      <span id="interior-points">0</span>
+      <span>积分</span>
+    </div>
+  </div>
+  <div class="interior-header">
+    <h2 id="rv-interior-title">基础房车</h2>
+    <p>选择一个功能区进入</p>
+  </div>
+  <div class="interior-content">
+    <div class="function-card pet-card" onclick="openPetSystem()">
+      <div class="card-icon">🐾</div>
+      <div class="card-title">宠物箱</div>
+      <div class="card-desc">与你的伙伴互动</div>
+    </div>
+    <div class="function-card shop-card" onclick="openShop()">
+      <div class="card-icon">📦</div>
+      <div class="card-title">空投补给</div>
+      <div class="card-desc">兑换物资和宠物</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PET SYSTEM ========== -->
+<div id="pet-system">
+  <div class="top-bar">
+    <button class="back-btn" onclick="closePetSystem()">← 返回房车</button>
+    <div class="points-display">
+      <span>💰</span>
+      <span id="pet-points">0</span>
+      <span>积分</span>
+    </div>
+  </div>
+  <div class="pet-area" id="pet-area"></div>
+</div>
+
+<!-- ========== SHOP SYSTEM ========== -->
+<div id="shop-system">
+  <div class="top-bar">
+    <button class="back-btn" onclick="closeShop()">← 返回房车</button>
+    <div class="points-display">
+      <span>💰</span>
+      <span id="shop-points">0</span>
+      <span>积分</span>
+    </div>
+  </div>
+  <div class="shop-tabs">
+    <button class="shop-tab active" onclick="switchShopTab('food')">🍖 食物</button>
+    <button class="shop-tab" onclick="switchShopTab('water')">💧 饮水</button>
+    <button class="shop-tab" onclick="switchShopTab('pets')">🐾 宠物</button>
+  </div>
+  <div class="shop-grid" id="shop-grid"></div>
+</div>
+
+<!-- ========== ADMIN PANEL ========== -->
+<div id="admin-panel">
+  <div class="top-bar">
+    <button class="back-btn" onclick="closeAdmin()">← 返回封面</button>
+    <div class="points-display">
+      <span>⚙️</span>
+      <span>管理面板</span>
+    </div>
+  </div>
+  <div class="admin-content" id="admin-content"></div>
+</div>
+
+<!-- ========== PET SELECT MODAL ========== -->
+<div class="modal-overlay" id="pet-select-modal">
+  <div class="modal-box" style="min-width:400px;max-width:90vw;">
+    <h3>🐾 选择你的宠物伙伴</h3>
+    <div class="pet-select-grid" id="pet-select-grid"></div>
+    <div class="modal-btns" style="margin-top:15px;">
+      <button class="btn-cancel" onclick="closePetSelectModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== GAME DATA ==========
+const DEFAULT_DATA = {
+  points: 0,
+  currentRV: 0,
+  unlockedRVs: [true, false, false, false, false],
+  ownedPets: [],
+  activePet: null,
+  petStats: {},
+  prices: {
+    food: {烤肉:30,面包:15,罐头:20,米饭:10,牛排:50,披萨:35,卷饼:25,拉面:20,寿司:40,汉堡:28},
+    water: {纯净水:10,碳酸饮料:20,果汁:25,咖啡:30,啤酒:35,牛奶:22,茶:18,能量饮料:40,椰子水:32,矿泉水:8},
+    pets: {忠犬旺财:100,喵星人小咪:80,雪球兔:120,赤狐小火:200,棕熊大力:350,灰狼暗影:300,苍鹰天眼:250,青蛇翠翠:180,壁虎小壁:150,鹦鹉彩虹:220}
+  }
+};
+
+let gameData = loadData();
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem('xiaoyuBase');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Merge with defaults for any missing keys
+      return { ...DEFAULT_DATA, ...parsed, prices: { ...DEFAULT_DATA.prices, ...parsed.prices } };
+    }
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+
+function saveData() {
+  localStorage.setItem('xiaoyuBase', JSON.stringify(gameData));
+  updateAllPoints();
+}
+
+function updateAllPoints() {
+  document.querySelectorAll('#main-points, #interior-points, #pet-points, #shop-points').forEach(el => {
+    el.textContent = gameData.points;
+  });
+}
+
+// ========== RV DATA ==========
+const RV_DATA = [
+  { name: '基础房车', desc: '末日生存的基本保障', icon: '🚐', theme: 'rv-basic', cost: 0 },
+  { name: '装甲房车', desc: '加装钢板防护，安全感倍增', icon: '🚛', theme: 'rv-armored', cost: 500 },
+  { name: '豪华房车', desc: '末世中的移动宫殿', icon: '🚌', theme: 'rv-luxury', cost: 1500 },
+  { name: '科技房车', desc: '搭载高科技设备的智能战车', icon: '🚀', theme: 'rv-tech', cost: 3000 },
+  { name: '终极堡垒', desc: '移动的末日要塞，无坚不摧', icon: '🏰', theme: 'rv-fortress', cost: 8000 }
+];
+
+// ========== PET DATA ==========
+const PET_DATA = [
+  { id: 'dog', name: '忠犬旺财', icon: '🐕', desc: '忠诚的伙伴，会守护你' },
+  { id: 'cat', name: '喵星人小咪', icon: '🐈', desc: '优雅而独立的小家伙' },
+  { id: 'rabbit', name: '雪球兔', icon: '🐰', desc: '软萌可爱的小白兔' },
+  { id: 'fox', name: '赤狐小火', icon: '🦊', desc: '机灵狡猾的小狐狸' },
+  { id: 'bear', name: '棕熊大力', icon: '🐻', desc: '力大无穷的忠实伙伴' },
+  { id: 'wolf', name: '灰狼暗影', icon: '🐺', desc: '暗夜中的忠诚卫士' },
+  { id: 'eagle', name: '苍鹰天眼', icon: '🦅', desc: '翱翔天际的侦察兵' },
+  { id: 'snake', name: '青蛇翠翠', icon: '🐍', desc: '安静优雅的冷血美人' },
+  { id: 'lizard', name: '壁虎小壁', icon: '🦎', desc: '灵活敏捷的小家伙' },
+  { id: 'parrot', name: '鹦鹉彩虹', icon: '🦜', desc: '会说话的彩色精灵' }
+];
+
+const FOOD_ICONS = {烤肉:'🍖',面包:'🍞',罐头:'🥫',米饭:'🍚',牛排:'🥩',披萨:'🍕',卷饼:'🌮',拉面:'🍜',寿司:'🍣',汉堡:'🍔'};
+const WATER_ICONS = {纯净水:'💧',碳酸饮料:'🥤',果汁:'🧃',咖啡:'☕',啤酒:'🍺',牛奶:'🥛',茶:'🍵',能量饮料:'⚡',椰子水:'🥥',矿泉水:'💦'};
+
+// ========== COVER ==========
+function createParticles() {
+  const container = document.getElementById('particles');
+  const emojis = ['🧟','💀','☣','🩸','🔥','⚠️'];
+  for(let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    p.style.left = Math.random()*100 + '%';
+    p.style.animationDelay = Math.random()*8 + 's';
+    p.style.animationDuration = (6 + Math.random()*6) + 's';
+    container.appendChild(p);
+  }
+}
+createParticles();
+
+function enterSystem() {
+  document.getElementById('cover-screen').style.opacity = '0';
+  setTimeout(() => {
+    document.getElementById('cover-screen').style.display = 'none';
+    document.getElementById('main-screen').classList.add('active');
+    renderRVCarousel();
+    updateAllPoints();
+  }, 800);
+}
+
+function exitToCover() {
+  document.getElementById('main-screen').classList.remove('active');
+  document.getElementById('cover-screen').style.display = 'flex';
+  document.getElementById('cover-screen').style.opacity = '1';
+}
+
+// ========== RV CAROUSEL ==========
+let currentRVIndex = 0;
+
+function renderRVCarousel() {
+  const carousel = document.getElementById('rv-carousel');
+  const dots = document.getElementById('rv-dots');
+  carousel.innerHTML = '';
+  dots.innerHTML = '';
+
+  RV_DATA.forEach((rv, i) => {
+    const item = document.createElement('div');
+    item.className = 'rv-item';
+    const isLocked = !gameData.unlockedRVs[i];
+    item.innerHTML = `
+      <div class="rv-visual ${rv.theme} ${isLocked ? 'locked' : ''}" onclick="${isLocked ? '' : 'enterRV('+i+')'}">
+        ${rv.icon}
+      </div>
+      <div class="rv-name">${rv.name}</div>
+      <div class="rv-desc">${rv.desc}</div>
+      ${isLocked ? `<div class="rv-unlock-info">🔒 需要 ${rv.cost} 积分解锁</div>
+        <button class="unlock-btn" onclick="unlockRV(${i})">🔓 解锁 (${rv.cost}积分)</button>` : 
+        '<div class="rv-unlock-info" style="color:#00ff88">✅ 已解锁 · 点击进入</div>'}
+    `;
+    carousel.appendChild(item);
+
+    const dot = document.createElement('div');
+    dot.className = `rv-dot ${i === currentRVIndex ? 'active' : ''}`;
+    dots.appendChild(dot);
+  });
+
+  carousel.style.transform = `translateX(-${currentRVIndex * 100}%)`;
+}
+
+function nextRV() {
+  if(currentRVIndex < RV_DATA.length - 1) {
+    currentRVIndex++;
+    renderRVCarousel();
+  }
+}
+
+function prevRV() {
+  if(currentRVIndex > 0) {
+    currentRVIndex--;
+    renderRVCarousel();
+  }
+}
+
+function unlockRV(index) {
+  const rv = RV_DATA[index];
+  if(gameData.points >= rv.cost) {
+    gameData.points -= rv.cost;
+    gameData.unlockedRVs[index] = true;
+    saveData();
+    renderRVCarousel();
+    showToast(`🎉 成功解锁「${rv.name}」！`);
+  } else {
+    showToast(`❌ 积分不足！需要 ${rv.cost} 积分，当前 ${gameData.points} 积分`);
+  }
+}
+
+function enterRV(index) {
+  gameData.currentRV = index;
+  document.getElementById('main-screen').classList.remove('active');
+  document.getElementById('rv-interior').classList.add('active');
+  document.getElementById('rv-interior-title').textContent = RV_DATA[index].name;
+  updateAllPoints();
+}
+
+function exitRV() {
+  document.getElementById('rv-interior').classList.remove('active');
+  document.getElementById('main-screen').classList.add('active');
+  renderRVCarousel();
+}
+
+// ========== PET SYSTEM ==========
+function openPetSystem() {
+  document.getElementById('rv-interior').classList.remove('active');
+  document.getElementById('pet-system').classList.add('active');
+  renderPetArea();
+  updateAllPoints();
+}
+
+function closePetSystem() {
+  document.getElementById('pet-system').classList.remove('active');
+  document.getElementById('rv-interior').classList.add('active');
+}
+
+function renderPetArea() {
+  const area = document.getElementById('pet-area');
+  
+  if(!gameData.activePet || !gameData.ownedPets.includes(gameData.activePet)) {
+    area.innerHTML = `
+      <div class="no-pet-msg">
+        <p style="font-size:3rem;margin-bottom:20px;">🥚</p>
+        <p>你还没有宠物伙伴</p>
+        <p style="color:#666;font-size:0.85rem;margin-top:10px;">去空投补给获取宠物，或选择已有宠物</p>
+        <button class="pet-action-btn btn-pet-select" style="margin-top:20px;" onclick="openPetSelectModal()">🐾 选择宠物</button>
+      </div>
+    `;
+    return;
+  }
+
+  const pet = PET_DATA.find(p => p.id === gameData.activePet);
+  if(!pet) return;
+
+  if(!gameData.petStats[pet.id]) {
+    gameData.petStats[pet.id] = { hunger: 80, happy: 80, health: 100 };
+  }
+  const stats = gameData.petStats[pet.id];
+
+  area.innerHTML = `
+    <div class="pet-display" id="pet-display">
+      <span style="cursor:pointer" onclick="petInteract()">${pet.icon}</span>
+    </div>
+    <div class="pet-name">${pet.name}</div>
+    <div class="pet-status">
+      <div class="pet-stat">
+        <label>🍖 饱食</label>
+        <div class="stat-bar"><div class="stat-fill hunger-fill" style="width:${stats.hunger}%"></div></div>
+        <span style="color:#ffd700;font-size:0.75rem;">${stats.hunger}%</span>
+      </div>
+      <div class="pet-stat">
+        <label>😊 心情</label>
+        <div class="stat-bar"><div class="stat-fill happy-fill" style="width:${stats.happy}%"></div></div>
+        <span style="color:#ff69b4;font-size:0.75rem;">${stats.happy}%</span>
+      </div>
+      <div class="pet-stat">
+        <label>💚 健康</label>
+        <div class="stat-bar"><div class="stat-fill health-fill" style="width:${stats.health}%"></div></div>
+        <span style="color:#00ff88;font-size:0.75rem;">${stats.health}%</span>
+      </div>
+    </div>
+    <div class="pet-actions">
+      <button class="pet-action-btn btn-feed" onclick="feedPet()">🍖 喂食 (-5积分)</button>
+      <button class="pet-action-btn btn-play" onclick="playWithPet()">🎾 玩耍 (-3积分)</button>
+      <button class="pet-action-btn btn-heal" onclick="healPet()">💊 治疗 (-10积分)</button>
+      <button class="pet-action-btn btn-pet-select" onclick="openPetSelectModal()">🔄 切换宠物</button>
+    </div>
+    <div class="pet-message" id="pet-message">💬 ${getPetMessage(pet, stats)}</div>
+  `;
+}
+
+function getPetMessage(pet, stats) {
+  if(stats.hunger < 20) return `${pet.icon} ${pet.name}看起来很饿，快喂喂它吧！`;
+  if(stats.happy < 20) return `${pet.icon} ${pet.name}有点不开心，陪它玩玩吧！`;
+  if(stats.health < 30) return `${pet.icon} ${pet.name}身体不太好，需要治疗...`;
+  if(stats.hunger > 80 && stats.happy > 80) return `${pet.icon} ${pet.name}非常开心，摇着尾巴看着你！`;
+  const msgs = [
+    `${pet.icon} ${pet.name}正在悠闲地待着~`,
+    `${pet.icon} ${pet.name}看到你来很高兴！`,
+    `${pet.icon} ${pet.name}打了个哈欠~`,
+    `${pet.icon} ${pet.name}蹭了蹭你的手~`
+  ];
+  return msgs[Math.floor(Math.random()*msgs.length)];
+}
+
+function feedPet() {
+  if(gameData.points < 5) { showToast('❌ 积分不足！需要5积分'); return; }
+  const pet = PET_DATA.find(p => p.id === gameData.activePet);
+  if(!pet) return;
+  
+  gameData.points -= 5;
+  gameData.petStats[pet.id].hunger = Math.min(100, gameData.petStats[pet.id].hunger + 20);
+  gameData.petStats[pet.id].happy = Math.min(100, gameData.petStats[pet.id].happy + 5);
+  saveData();
+  
+  // Animation
+  createFeedAnimation('🍖');
+  renderPetArea();
+  showToast(`🍖 喂食成功！${pet.name}吃得很开心~`);
+}
+
+function playWithPet() {
+  if(gameData.points < 3) { showToast('❌ 积分不足！需要3积分'); return; }
+  const pet = PET_DATA.find(p => p.id === gameData.activePet);
+  if(!pet) return;
+  
+  gameData.points -= 3;
+  gameData.petStats[pet.id].happy = Math.min(100, gameData.petStats[pet.id].happy + 25);
+  gameData.petStats[pet.id].hunger = Math.max(0, gameData.petStats[pet.id].hunger - 5);
+  saveData();
+  
+  createHeartAnimation();
+  renderPetArea();
+  showToast(`🎾 ${pet.name}玩得很开心！心情+25`);
+}
+
+function healPet() {
+  if(gameData.points < 10) { showToast('❌ 积分不足！需要10积分'); return; }
+  const pet = PET_DATA.find(p => p.id === gameData.activePet);
+  if(!pet) return;
+  
+  gameData.points -= 10;
+  gameData.petStats[pet.id].health = Math.min(100, gameData.petStats[pet.id].health + 30);
+  saveData();
+  
+  renderPetArea();
+  showToast(`💊 ${pet.name}恢复了健康！健康+30`);
+}
+
+function petInteract() {
+  const pet = PET_DATA.find(p => p.id === gameData.activePet);
+  if(!pet) return;
+  gameData.petStats[pet.id].happy = Math.min(100, gameData.petStats[pet.id].happy + 2);
+  saveData();
+  createHeartAnimation();
+  renderPetArea();
+}
+
+function createFeedAnimation(emoji) {
+  const display = document.getElementById('pet-display');
+  if(!display) return;
+  const anim = document.createElement('div');
+  anim.className = 'feed-anim';
+  anim.textContent = emoji;
+  anim.style.left = '50%';
+  anim.style.bottom = '30%';
+  display.appendChild(anim);
+  setTimeout(() => anim.remove(), 1000);
+}
+
+function createHeartAnimation() {
+  const display = document.getElementById('pet-display');
+  if(!display) return;
+  for(let i = 0; i < 3; i++) {
+    const anim = document.createElement('div');
+    anim.className = 'heart-anim';
+    anim.textContent = '❤️';
+    anim.style.left = (30 + Math.random()*40) + '%';
+    anim.style.bottom = '40%';
+    anim.style.animationDelay = (i*0.2) + 's';
+    display.appendChild(anim);
+    setTimeout(() => anim.remove(), 1800);
+  }
+}
+
+// ========== PET SELECT ==========
+function openPetSelectModal() {
+  const grid = document.getElementById('pet-select-grid');
+  grid.innerHTML = '';
+  
+  PET_DATA.forEach(pet => {
+    const owned = gameData.ownedPets.includes(pet.id);
+    const item = document.createElement('div');
+    item.className = `pet-select-item ${owned ? 'owned' : ''}`;
+    item.innerHTML = `
+      <div class="pet-sel-icon">${pet.icon}</div>
+      <div class="pet-sel-name">${pet.name}</div>
+      <div style="color:${owned?'#00ff88':'#888'};font-size:0.75rem;margin-top:5px;">
+        ${owned ? '✅ 已拥有' : '未拥有'}
+      </div>
+    `;
+    if(owned) {
+      item.onclick = () => selectPet(pet.id);
+    }
+    grid.appendChild(item);
+  });
+  
+  document.getElementById('pet-select-modal').classList.add('active');
+}
+
+function closePetSelectModal() {
+  document.getElementById('pet-select-modal').classList.remove('active');
+}
+
+function selectPet(petId) {
+  gameData.activePet = petId;
+  if(!gameData.petStats[petId]) {
+    gameData.petStats[petId] = { hunger: 80, happy: 80, health: 100 };
+  }
+  saveData();
+  closePetSelectModal();
+  renderPetArea();
+  const pet = PET_DATA.find(p => p.id === petId);
+  showToast(`🎉 已选择 ${pet.name} 作为伙伴！`);
+}
+
+// ========== SHOP SYSTEM ==========
+let currentShopTab = 'food';
+
+function openShop() {
+  document.getElementById('rv-interior').classList.remove('active');
+  document.getElementById('shop-system').classList.add('active');
+  renderShop();
+  updateAllPoints();
+}
+
+function closeShop() {
+  document.getElementById('shop-system').classList.remove('active');
+  document.getElementById('rv-interior').classList.add('active');
+}
+
+function switchShopTab(tab) {
+  currentShopTab = tab;
+  document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  renderShop();
+}
+
+function renderShop() {
+  const grid = document.getElementById('shop-grid');
+  grid.innerHTML = '';
+  
+  let items, icons;
+  if(currentShopTab === 'food') {
+    items = gameData.prices.food;
+    icons = FOOD_ICONS;
+  } else if(currentShopTab === 'water') {
+    items = gameData.prices.water;
+    icons = WATER_ICONS;
+  } else {
+    items = gameData.prices.pets;
+    icons = {};
+    PET_DATA.forEach(p => icons[p.name] = p.icon);
+  }
+
+  Object.entries(items).forEach(([name, price]) => {
+    const canAfford = gameData.points >= price;
+    const isPet = currentShopTab === 'pets';
+    const petData = isPet ? PET_DATA.find(p => p.name === name) : null;
+    const petOwned = petData ? gameData.ownedPets.includes(petData.id) : false;
+    
+    const item = document.createElement('div');
+    item.className = `shop-item ${!canAfford && !petOwned ? 'cant-afford' : ''}`;
+    item.innerHTML = `
+      <div class="item-icon">${icons[name] || '📦'}</div>
+      <div class="item-name">${name}</div>
+      <div class="item-price">${petOwned ? '✅ 已拥有' : '💰 ' + price + ' 积分'}</div>
+    `;
+    
+    if(!petOwned) {
+      item.onclick = () => buyItem(name, price, currentShopTab);
+    }
+    grid.appendChild(item);
+  });
+}
+
+function buyItem(name, price, category) {
+  if(category === 'pets') {
+    const petData = PET_DATA.find(p => p.name === name);
+    if(!petData) return;
+    if(gameData.ownedPets.includes(petData.id)) {
+      showToast('你已经拥有这个宠物了！');
+      return;
+    }
+    if(gameData.points < price) {
+      showToast(`❌ 积分不足！需要 ${price} 积分`);
+      return;
+    }
+    gameData.points -= price;
+    gameData.ownedPets.push(petData.id);
+    if(!gameData.activePet) gameData.activePet = petData.id;
+    if(!gameData.petStats[petData.id]) {
+      gameData.petStats[petData.id] = { hunger: 80, happy: 80, health: 100 };
+    }
+    saveData();
+    renderShop();
+    showToast(`🎉 成功领养「${name}」！${petData.icon}`);
+  } else {
+    if(gameData.points < price) {
+      showToast(`❌ 积分不足！需要 ${price} 积分`);
+      return;
+    }
+    gameData.points -= price;
+    
+    // If has active pet, feeding/water benefits pet
+    if(gameData.activePet && gameData.petStats[gameData.activePet]) {
+      if(category === 'food') {
+        gameData.petStats[gameData.activePet].hunger = Math.min(100, gameData.petStats[gameData.activePet].hunger + 15);
+      } else {
+        gameData.petStats[gameData.activePet].health = Math.min(100, gameData.petStats[gameData.activePet].health + 5);
+      }
+    }
+    saveData();
+    renderShop();
+    const icon = category === 'food' ? FOOD_ICONS[name] : WATER_ICONS[name];
+    showToast(`${icon} 成功购买「${name}」！`);
+  }
+}
+
+// ========== ADMIN PANEL ==========
+function showPasswordModal() {
+  document.getElementById('password-modal').classList.add('active');
+  document.getElementById('admin-password').value = '';
+  document.getElementById('admin-password').focus();
+}
+
+function closePasswordModal() {
+  document.getElementById('password-modal').classList.remove('active');
+}
+
+function verifyPassword() {
+  const pwd = document.getElementById('admin-password').value;
+  if(pwd === '666666') {
+    closePasswordModal();
+    openAdmin();
+  } else {
+    showToast('❌ 密码错误！');
+    document.getElementById('admin-password').value = '';
+  }
+}
+
+function openAdmin() {
+  document.getElementById('admin-panel').classList.add('active');
+  renderAdmin();
+}
+
+function closeAdmin() {
+  document.getElementById('admin-panel').classList.remove('active');
+}
+
+function renderAdmin() {
+  const content = document.getElementById('admin-content');
+  content.innerHTML = `
+    <div class="current-points-display">
+      <div class="label">当前积分</div>
+      <div class="value">${gameData.points}</div>
+    </div>
+    
+    <div class="add-points-section">
+      <input type="number" id="add-points-input" placeholder="输入要增加的积分数" min="0">
+      <button class="add-points-btn" onclick="addPoints()">➕ 增加积分</button>
+    </div>
+    
+    <div class="admin-section">
+      <h3>🍖 食物定价</h3>
+      ${Object.entries(gameData.prices.food).map(([name, price]) => `
+        <div class="admin-row">
+          <label><span>${FOOD_ICONS[name]||'📦'}</span> ${name}</label>
+          <input type="number" value="${price}" onchange="updatePrice('food','${name}',this.value)" min="0">
+        </div>
+      `).join('')}
+    </div>
+    
+    <div class="admin-section">
+      <h3>💧 饮水定价</h3>
+      ${Object.entries(gameData.prices.water).map(([name, price]) => `
+        <div class="admin-row">
+          <label><span>${WATER_ICONS[name]||'📦'}</span> ${name}</label>
+          <input type="number" value="${price}" onchange="updatePrice('water','${name}',this.value)" min="0">
+        </div>
+      `).join('')}
+    </div>
+    
+    <div class="admin-section">
+      <h3>🐾 宠物定价</h3>
+      ${Object.entries(gameData.prices.pets).map(([name, price]) => {
+        const pet = PET_DATA.find(p => p.name === name);
+        return `
+        <div class="admin-row">
+          <label><span>${pet?pet.icon:'📦'}</span> ${name}</label>
+          <input type="number" value="${price}" onchange="updatePrice('pets','${name}',this.value)" min="0">
+        </div>
+      `}).join('')}
+    </div>
+  `;
+}
+
+function addPoints() {
+  const input = document.getElementById('add-points-input');
+  const amount = parseInt(input.value);
+  if(isNaN(amount) || amount <= 0) {
+    showToast('❌ 请输入有效的积分数！');
+    return;
+  }
+  gameData.points += amount;
+  saveData();
+  input.value = '';
+  renderAdmin();
+  showToast(`✅ 成功增加 ${amount} 积分！当前: ${gameData.points}`);
+}
+
+function updatePrice(category, name, value) {
+  const price = parseInt(value);
+  if(isNaN(price) || price < 0) return;
+  gameData.prices[category][name] = price;
+  saveData();
+  showToast(`✅ 「${name}」价格已更新为 ${price} 积分`);
+}
+
+// ========== TOAST ==========
+function showToast(message) {
+  const existing = document.querySelector('.toast');
+  if(existing) existing.remove();
+  
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+// ========== TOUCH SWIPE ==========
+let touchStartX = 0;
+let touchEndX = 0;
+
+document.addEventListener('touchstart', e => {
+  touchStartX = e.changedTouches[0].screenX;
+});
+
+document.addEventListener('touchend', e => {
+  touchEndX = e.changedTouches[0].screenX;
+  handleSwipe();
+});
+
+function handleSwipe() {
+  const diff = touchStartX - touchEndX;
+  if(Math.abs(diff) < 50) return;
+  
+  const mainActive = document.getElementById('main-screen').classList.contains('active');
+  if(!mainActive) return;
+  
+  if(diff > 0) nextRV();
+  else prevRV();
+}
+
+// ========== KEYBOARD ==========
+document.addEventListener('keydown', e => {
+  if(e.key === 'Enter') {
+    const modal = document.getElementById('password-modal');
+    if(modal.classList.contains('active')) verifyPassword();
+  }
+  if(e.key === 'Escape') {
+    closePasswordModal();
+    closePetSelectModal();
+  }
+});
+
+// ========== AUTO DECAY (pet stats decrease over time) ==========
+setInterval(() => {
+  if(gameData.activePet && gameData.petStats[gameData.activePet]) {
+    const stats = gameData.petStats[gameData.activePet];
+    stats.hunger = Math.max(0, stats.hunger - 1);
+    stats.happy = Math.max(0, stats.happy - 1);
+    if(stats.hunger < 10) stats.health = Math.max(0, stats.health - 1);
+    saveData();
+    
+    if(document.getElementById('pet-system').classList.contains('active')) {
+      renderPetArea();
+    }
+  }
+}, 30000); // Every 30 seconds
+
+// ========== INIT ==========
+updateAllPoints();
+</script>
+</body>
+</html>
